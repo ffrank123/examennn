@@ -1,38 +1,25 @@
-/*
- * Declarative Pipeline para backend Laravel (PHP 8.1) con:
- *  – Composer install
- *  – Key de la app
- *  – Test suite PHPUnit sobre SQLite in-memory
- *  – SonarQube scan + Quality Gate
- *
- * Requiere:
- *  • Credencial “github_pat”  → tu PAT de GitHub (Username/Password)
- *  • SonarQube server llamado “sonarqube” en Jenkins (Manage → Configure System)
- *  • Herramienta “sonar-scanner” instalada en Jenkins (o usa la image docker más abajo)
- */
-
 pipeline {
-    agent any       // o el label de tu agente Linux
+    agent any          // o el label de tu nodo
 
+    // ─────────────────────────
+    // Variables de entorno
+    // ─────────────────────────
     environment {
-        # Vars básicas.
-        APP_ENV          = 'testing'
+        APP_ENV          = 'testing'   // modo test de Laravel
         DB_CONNECTION    = 'sqlite'
         DB_DATABASE      = ':memory:'
         CACHE_DRIVER     = 'array'
         QUEUE_CONNECTION = 'sync'
-        # Sonar
         SONAR_PROJECTKEY = 'examen_backend'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Usa tu PAT guardado como “github_pat”
                 checkout([$class: 'GitSCM',
                           userRemoteConfigs: [[
-                              url: 'https://github.com/ffrank123/EXAMENN.git',
-                              credentialsId: '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'
+                              url: 'https://github.com/ffrank123/examennn.git',
+                              credentialsId: 'github_pat'
                           ]],
                           branches: [[name: '*/main']]
                 ])
@@ -42,8 +29,8 @@ pipeline {
         stage('Composer install') {
             agent {
                 docker {
-                    image 'composer:2.7'      // PHP 8.3-cli + Composer
-                    args  '-u 1000:1000'      // Evita líos de permisos
+                    image 'composer:2.7'          // PHP 8.3-cli + Composer
+                    args  '-u 1000:1000'
                 }
             }
             steps {
@@ -58,25 +45,20 @@ pipeline {
         }
 
         stage('Test Suite') {
-            agent { reuseNode true }         // reutiliza el mismo contenedor
             steps {
                 sh './vendor/bin/phpunit --testdox --log-junit build/logs/phpunit.xml'
             }
             post {
-                always {
-                    junit 'build/logs/phpunit.xml'
-                }
+                always { junit 'build/logs/phpunit.xml' }
             }
         }
 
         stage('SonarQube Scan') {
             agent {
-                docker {
-                    image 'sonarsource/sonar-scanner-cli:latest'
-                }
+                docker { image 'sonarsource/sonar-scanner-cli:latest' }
             }
             environment {
-                SONAR_HOST_URL = credentials('sonarqube_url')    // opcional: o usa el plugin
+                SONAR_HOST_URL = credentials('sonarqube_url')   // si usas credencial separada
                 SONAR_LOGIN    = credentials('sonarqube_token')
             }
             steps {
@@ -87,7 +69,6 @@ pipeline {
         }
 
         stage('Quality Gate') {
-            // Bloquea el pipeline si la puerta de calidad no pasa (timeout 5 min)
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
