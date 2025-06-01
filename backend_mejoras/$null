@@ -1,0 +1,9 @@
+Error response from daemon: error while removing network: network network_jenkins id 5f9cc1fbf2a23e363d38e652a9737c537558afca3b7f7c0ce9a172f38c4138db has active endpoints
+Error response from daemon: network # not found
+Error response from daemon: network solo not found
+Error response from daemon: network si not found
+Error response from daemon: network no not found
+Error response from daemon: network la not found
+Error response from daemon: network declaras not found
+Error response from daemon: network external not found
+exit status 1

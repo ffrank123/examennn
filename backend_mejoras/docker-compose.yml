@@ -1,0 +1,26 @@
+services:
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile-jenkins-php    # ← usa la imagen de arriba
+    container_name: jenkins
+    user: root                               # Jenkins seguirá corriendo como ‘jenkins’
+    ports:
+      - "9080:8080"
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+    networks:
+      - backend
+
+  sonar:
+    image: sonarqube:lts
+    container_name: sonar
+    ports:
+      - "9000:9000"
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true
+    name: network_jenkins                    # ← la misma red que ya tienes
