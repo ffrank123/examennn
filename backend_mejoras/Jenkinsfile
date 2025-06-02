@@ -27,39 +27,35 @@ pipeline {
             agent {
                 docker {
                     image 'php:8.2-cli'
-                    args '-u root:root'
+                    args  '-u root:root'
                 }
             }
             steps {
-                dir('backend_mejoras') {
-                    sh '''
-                        apt-get update && apt-get install -y unzip git curl zip
+                sh '''
+                    apt-get update && apt-get install -y unzip git curl
+                    curl -sS https://getcomposer.org/installer | php
+                    mv composer.phar /usr/local/bin/composer
 
-                        # Instalar Composer
-                        curl -sS https://getcomposer.org/installer | php
-                        mv composer.phar /usr/local/bin/composer
+                    export COMPOSER_HOME=$(pwd)/.composer
+                    mkdir -p $COMPOSER_HOME
 
-                        # Verificar instalación
-                        composer --version
-
-                        # Laravel
-                        composer install --no-interaction --prefer-dist --ansi
-                        cp .env.example .env || true
-                        php artisan key:generate --ansi || true
-                    '''
-                }
+                    composer install --no-interaction --prefer-dist --ansi
+                    cp .env.example .env
+                    php artisan key:generate --ansi
+                '''
             }
         }
 
         stage('Test Suite') {
             steps {
-                dir('backend_mejoras') {
-                    sh './vendor/bin/phpunit --testdox --log-junit build/logs/phpunit.xml'
-                }
+                sh '''
+                    mkdir -p build/logs
+                    ./vendor/bin/phpunit --testdox --log-junit build/logs/phpunit.xml
+                '''
             }
             post {
                 always {
-                    junit 'backend_mejoras/build/logs/phpunit.xml'
+                    junit 'build/logs/phpunit.xml'
                 }
             }
         }
@@ -68,23 +64,21 @@ pipeline {
             agent {
                 docker {
                     image 'sonarsource/sonar-scanner-cli:latest'
-                    args '-u root:root'
+                    args  '-u root:root'
                 }
             }
             environment {
-                SONAR_HOST_URL = 'http://localhost:9000'
+                SONAR_HOST_URL = 'http://sonarqube:9000'
                 SONAR_LOGIN    = credentials('sonarqube_token')
             }
             steps {
-                dir('backend_mejoras') {
-                    withSonarQubeEnv('sonarqube') {
-                        sh '''
-                            sonar-scanner \
-                            -Dsonar.projectKey=$SONAR_PROJECTKEY \
-                            -Dsonar.sources=app \
-                            -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml
-                        '''
-                    }
+                withSonarQubeEnv('sonarqube') {
+                    sh '''
+                        sonar-scanner \
+                        -Dsonar.projectKey=$SONAR_PROJECTKEY \
+                        -Dsonar.sources=app \
+                        -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml
+                    '''
                 }
             }
         }
