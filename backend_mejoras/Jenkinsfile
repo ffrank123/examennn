@@ -76,28 +76,29 @@ pipeline {
             }
         }
 
-        stage('SonarQube Scan') {
-            agent {
-                docker {
-                    image 'sonarsource/sonar-scanner-cli:latest'
-                    args  '-u root:root'
-                }
-            }
-            steps {
-                dir('backend_mejoras') {
-                    withSonarQubeEnv('sonarqube') {
-                        sh '''
-                            sonar-scanner \
-                              -Dsonar.projectKey=${SONAR_PROJECTKEY} \
-                              -Dsonar.sources=app \
-                              -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
-                              -Dsonar.login=${SONAR_TOKEN} \
-                              -Dsonar.host.url=http://sonar:9000
-                        '''
-                    }
-                }
+       stage('SonarQube Scan') {
+    agent {
+        docker {
+            image 'sonarsource/sonar-scanner-cli:latest'
+            args  '-u root:root --network jenkins_net' // 👈 SOLUCIÓN AQUÍ
+        }
+    }
+    steps {
+        dir('backend_mejoras') {
+            withSonarQubeEnv('sonarqube') {
+                sh '''
+                    sonar-scanner \
+                      -Dsonar.projectKey=${SONAR_PROJECTKEY} \
+                      -Dsonar.sources=app \
+                      -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
+                      -Dsonar.login=${SONAR_TOKEN} \
+                      -Dsonar.host.url=http://sonar:9000
+                '''
             }
         }
+    }
+}
+
 
         stage('Quality Gate') {
             steps {
