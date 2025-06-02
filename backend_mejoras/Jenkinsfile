@@ -27,7 +27,7 @@ pipeline {
             steps {
                 dir('backend_mejoras') {
                     sh '''
-                        apt-get update && apt-get install -y unzip git curl sqlite3 libsqlite3-dev php8.2-sqlite3
+                        apt-get update && apt-get install -y unzip git curl sqlite3 libsqlite3-dev php-sqlite3
                         curl -sS https://getcomposer.org/installer | php
                         mv composer.phar /usr/local/bin/composer
 
