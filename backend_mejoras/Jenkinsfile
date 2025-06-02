@@ -8,7 +8,7 @@ pipeline {
         CACHE_DRIVER     = 'array'
         QUEUE_CONNECTION = 'sync'
         SONAR_PROJECTKEY = 'examen_backend'
-        SONAR_TOKEN      = 'squ_2e4cb7258097f298e66bf138576b9779a667f850' // Token directo
+        SONAR_TOKEN      = 'squ_2e4cb7258097f298e66bf138576b9779a667f850'
     }
 
     stages {
@@ -37,10 +37,8 @@ pipeline {
                         apt-get update && apt-get install -y unzip git curl
                         curl -sS https://getcomposer.org/installer | php
                         mv composer.phar /usr/local/bin/composer
-
                         export COMPOSER_HOME=$(pwd)/.composer
                         mkdir -p $COMPOSER_HOME
-
                         composer install --no-interaction --prefer-dist --ansi
                         cp .env.example .env
                         php artisan key:generate --ansi
@@ -76,29 +74,28 @@ pipeline {
             }
         }
 
-       stage('SonarQube Scan') {
-    agent {
-        docker {
-            image 'sonarsource/sonar-scanner-cli:latest'
-            args  '-u root:root --network jenkins_net' // 👈 SOLUCIÓN AQUÍ
-        }
-    }
-    steps {
-        dir('backend_mejoras') {
-            withSonarQubeEnv('sonarqube') {
-                sh '''
-                    sonar-scanner \
-                      -Dsonar.projectKey=${SONAR_PROJECTKEY} \
-                      -Dsonar.sources=app \
-                      -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
-                      -Dsonar.login=${SONAR_TOKEN} \
-                      -Dsonar.host.url=http://sonarqube:9000
-                '''
+        stage('SonarQube Scan') {
+            agent {
+                docker {
+                    image 'sonarsource/sonar-scanner-cli:latest'
+                    args  '-u root:root --network network_jenkins'
+                }
+            }
+            steps {
+                dir('backend_mejoras') {
+                    withSonarQubeEnv('sonarqube') {
+                        sh '''
+                            sonar-scanner \
+                              -Dsonar.projectKey=${SONAR_PROJECTKEY} \
+                              -Dsonar.sources=app \
+                              -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
+                              -Dsonar.login=${SONAR_TOKEN} \
+                              -Dsonar.host.url=http://sonarqube:9000
+                        '''
+                    }
+                }
             }
         }
-    }
-}
-
 
         stage('Quality Gate') {
             steps {
