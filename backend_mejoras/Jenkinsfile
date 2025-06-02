@@ -1,11 +1,8 @@
 pipeline {
-    agent any          // o el label de tu nodo
+    agent any
 
-    // ─────────────────────────
-    // Variables de entorno
-    // ─────────────────────────
     environment {
-        APP_ENV          = 'testing'   // modo test de Laravel
+        APP_ENV          = 'testing'
         DB_CONNECTION    = 'sqlite'
         DB_DATABASE      = ':memory:'
         CACHE_DRIVER     = 'array'
@@ -17,11 +14,11 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
-                          userRemoteConfigs: [[
-                              url: 'https://github.com/ffrank123/examennn.git',
-                              credentialsId: 'github_pat'
-                          ]],
-                          branches: [[name: '*/main']]
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/ffrank123/examennn.git',
+                        credentialsId: 'github_pat'
+                    ]],
+                    branches: [[name: '*/main']]
                 ])
             }
         }
@@ -29,16 +26,16 @@ pipeline {
         stage('Composer install') {
             agent {
                 docker {
-                    image 'composer:2.7'          // PHP 8.3-cli + Composer
-                    args  '-u 1000:1000'
+                    image 'php:8.2-cli' // PHP con Composer se puede instalar
+                    args '-v /usr/local/bin/composer:/usr/bin/composer' // Usa composer del host o instalar dentro
                 }
             }
             steps {
                 sh '''
+                    apt-get update && apt-get install -y unzip git curl
+                    curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
                     composer install --no-interaction --prefer-dist --ansi
                     cp .env.example .env
-                    php -r "file_put_contents('.env', str_replace('DB_CONNECTION=mysql', 'DB_CONNECTION=${DB_CONNECTION}', file_get_contents('.env')));"
-                    php -r "file_put_contents('.env', str_replace('DB_DATABASE=laravel', 'DB_DATABASE=${DB_DATABASE}', file_get_contents('.env')));"
                     php artisan key:generate --ansi
                 '''
             }
@@ -49,21 +46,30 @@ pipeline {
                 sh './vendor/bin/phpunit --testdox --log-junit build/logs/phpunit.xml'
             }
             post {
-                always { junit 'build/logs/phpunit.xml' }
+                always {
+                    junit 'build/logs/phpunit.xml'
+                }
             }
         }
 
         stage('SonarQube Scan') {
             agent {
-                docker { image 'sonarsource/sonar-scanner-cli:latest' }
+                docker {
+                    image 'sonarsource/sonar-scanner-cli:latest'
+                }
             }
             environment {
-                SONAR_HOST_URL = credentials('sonarqube_url')   // si usas credencial separada
+                SONAR_HOST_URL = 'http://localhost:9000'
                 SONAR_LOGIN    = credentials('sonarqube_token')
             }
             steps {
                 withSonarQubeEnv('sonarqube') {
-                    sh 'sonar-scanner -Dsonar.projectKey=$SONAR_PROJECTKEY -Dsonar.sources=app -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml'
+                    sh '''
+                        sonar-scanner \
+                        -Dsonar.projectKey=$SONAR_PROJECTKEY \
+                        -Dsonar.sources=app \
+                        -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml
+                    '''
                 }
             }
         }
@@ -78,7 +84,11 @@ pipeline {
     }
 
     post {
-        success { echo '✅ Build OK – Tests y análisis pasaron.' }
-        failure { echo '❌ Build falló – revisa la consola y los logs.' }
+        success {
+            echo '✅ Build OK – Tests y análisis pasaron.'
+        }
+        failure {
+            echo '❌ Build falló – revisa la consola y los logs.'
+        }
     }
 }
