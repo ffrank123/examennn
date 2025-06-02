@@ -78,7 +78,7 @@ pipeline {
             agent {
                 docker {
                     image 'sonarsource/sonar-scanner-cli:latest'
-                    args  '-u root:root --network network_jenkins'
+                    args  '-u root:root --network jenkins_net'
                 }
             }
             steps {
@@ -90,7 +90,7 @@ pipeline {
                               -Dsonar.sources=app \
                               -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
                               -Dsonar.login=${SONAR_TOKEN} \
-                              -Dsonar.host.url=http://sonarqube:9000
+                              -Dsonar.host.url=http://sonar:9000
                         '''
                     }
                 }
