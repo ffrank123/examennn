@@ -1,4 +1,3 @@
-### docker-compose.yml
 version: '3.9'
 
 services:
@@ -6,7 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-jenkins-php
-    container_name: jenkins
+    # ⚠️ QUITA esta línea para evitar conflictos
+    # container_name: jenkins
     ports:
       - "9080:8080"
       - "50000:50000"
