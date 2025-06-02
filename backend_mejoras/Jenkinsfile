@@ -48,11 +48,12 @@ pipeline {
             }
         }
 
-        stage('Test Suite') {
+                stage('Test Suite') {
             steps {
                 dir('backend_mejoras') {
                     sh '''
                         mkdir -p build/logs
+                        chmod +x ./vendor/bin/phpunit   # <- línea nueva que soluciona el error
                         ./vendor/bin/phpunit --testdox --log-junit build/logs/phpunit.xml
                     '''
                 }
@@ -65,6 +66,7 @@ pipeline {
                 }
             }
         }
+
 
         stage('SonarQube Scan') {
             agent {
