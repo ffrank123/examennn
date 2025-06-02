@@ -16,7 +16,7 @@ pipeline {
                 checkout([$class: 'GitSCM',
                     userRemoteConfigs: [[
                         url: 'https://github.com/ffrank123/examennn.git',
-                        credentialsId: 'github_pat' // <-- ya está bien
+                        credentialsId: 'github_pat'
                     ]],
                     branches: [[name: '*/main']]
                 ])
@@ -84,7 +84,7 @@ pipeline {
             }
             environment {
                 SONAR_HOST_URL = 'http://sonarqube:9000'
-                SONAR_TOKEN    = credentials('sonarqube') // <- este ID debe estar en Jenkins
+                SONAR_TOKEN    = credentials('sonarqube')  // <-- Asegúrate de que este ID exista en Jenkins
             }
             steps {
                 dir('backend_mejoras') {
