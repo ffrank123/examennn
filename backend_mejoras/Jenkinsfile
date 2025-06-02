@@ -26,14 +26,19 @@ pipeline {
         stage('Composer install') {
             agent {
                 docker {
-                    image 'php:8.2-cli' // PHP con Composer se puede instalar
-                    args '-v /usr/local/bin/composer:/usr/bin/composer' // Usa composer del host o instalar dentro
+                    image 'php:8.2-cli'
+                    args  '-u root:root' // 🔧 Corre como root
                 }
             }
             steps {
                 sh '''
                     apt-get update && apt-get install -y unzip git curl
-                    curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
+                    curl -sS https://getcomposer.org/installer | php
+                    mv composer.phar /usr/local/bin/composer
+
+                    export COMPOSER_HOME=$(pwd)/.composer
+                    mkdir -p $COMPOSER_HOME
+
                     composer install --no-interaction --prefer-dist --ansi
                     cp .env.example .env
                     php artisan key:generate --ansi
@@ -56,6 +61,7 @@ pipeline {
             agent {
                 docker {
                     image 'sonarsource/sonar-scanner-cli:latest'
+                    args  '-u root:root'
                 }
             }
             environment {
