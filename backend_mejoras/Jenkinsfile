@@ -76,32 +76,31 @@ pipeline {
         }
 
         stage('SonarQube Scan') {
-    agent {
-        docker {
-            image 'sonarsource/sonar-scanner-cli:latest'
-            args  '-u root:root'
-        }
-    }
-    environment {
-        SONAR_HOST_URL = 'http://sonarqube:9000'
-        SONAR_TOKEN    = credentials('sonarqube')  // Asegúrate de que esta credencial esté creada en Jenkins
-    }
-    steps {
-        dir('backend_mejoras') {
-            withSonarQubeEnv('sonarqube') {
-                sh """
-                    sonar-scanner \
-                      -Dsonar.projectKey=${SONAR_PROJECTKEY} \
-                      -Dsonar.sources=app \
-                      -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
-                      -Dsonar.login=${SONAR_TOKEN} \
-                      -Dsonar.host.url=${SONAR_HOST_URL}
-                """
+            agent {
+                docker {
+                    image 'sonarsource/sonar-scanner-cli:latest'
+                    args  '-u root:root'
+                }
+            }
+            environment {
+                SONAR_HOST_URL = 'http://sonar:9000'
+                SONAR_TOKEN    = credentials('sonarqube')
+            }
+            steps {
+                dir('backend_mejoras') {
+                    withSonarQubeEnv('sonarqube') {
+                        sh """
+                            sonar-scanner \
+                              -Dsonar.projectKey=${SONAR_PROJECTKEY} \
+                              -Dsonar.sources=app \
+                              -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
+                              -Dsonar.login=${SONAR_TOKEN} \
+                              -Dsonar.host.url=${SONAR_HOST_URL}
+                        """
+                    }
+                }
             }
         }
-    }
-}
-
 
         stage('Quality Gate') {
             steps {
