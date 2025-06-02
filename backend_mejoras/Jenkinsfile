@@ -8,7 +8,6 @@ pipeline {
         CACHE_DRIVER     = 'array'
         QUEUE_CONNECTION = 'sync'
         SONAR_PROJECTKEY = 'examen_backend'
-        SONAR_HOST_URL   = 'http://sonar:9000'
     }
 
     stages {
@@ -83,17 +82,21 @@ pipeline {
                     args  '-u root:root'
                 }
             }
+            environment {
+                SONAR_HOST_URL = 'http://sonar:9000'
+                SONAR_TOKEN    = credentials('sonarqube')
+            }
             steps {
                 dir('backend_mejoras') {
-                    withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
-                        sh '''
+                    withSonarQubeEnv('sonarqube') {
+                        sh """
                             sonar-scanner \
-                              -Dsonar.projectKey=examen_backend \
+                              -Dsonar.projectKey=${SONAR_PROJECTKEY} \
                               -Dsonar.sources=app \
                               -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
-                              -Dsonar.login=$SONAR_TOKEN \
-                              -Dsonar.host.url=http://sonar:9000
-                        '''
+                              -Dsonar.login=${SONAR_TOKEN} \
+                              -Dsonar.host.url=${SONAR_HOST_URL}
+                        """
                     }
                 }
             }
