@@ -49,23 +49,30 @@ pipeline {
         }
 
                 stage('Test Suite') {
-            steps {
-                dir('backend_mejoras') {
-                    sh '''
-                        mkdir -p build/logs
-                        chmod +x ./vendor/bin/phpunit   # <- línea nueva que soluciona el error
-                        ./vendor/bin/phpunit --testdox --log-junit build/logs/phpunit.xml
-                    '''
-                }
-            }
-            post {
-                always {
-                    dir('backend_mejoras') {
-                        junit 'build/logs/phpunit.xml'
-                    }
-                }
+    agent {
+        docker {
+            image 'php:8.2-cli'
+            args  '-u root:root'
+        }
+    }
+    steps {
+        dir('backend_mejoras') {
+            sh '''
+                mkdir -p build/logs
+                chmod +x ./vendor/bin/phpunit
+                ./vendor/bin/phpunit --testdox --log-junit build/logs/phpunit.xml
+            '''
+        }
+    }
+    post {
+        always {
+            dir('backend_mejoras') {
+                junit 'build/logs/phpunit.xml'
             }
         }
+    }
+}
+
 
 
         stage('SonarQube Scan') {
