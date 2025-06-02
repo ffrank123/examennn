@@ -7,19 +7,13 @@ pipeline {
         DB_DATABASE      = ':memory:'
         CACHE_DRIVER     = 'array'
         QUEUE_CONNECTION = 'sync'
-        SONAR_PROJECTKEY = 'examen_backend'
+        SONAR_PROJECTKEY = 'turismo-capachica'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM',
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/ffrank123/examennn.git',
-                        credentialsId: 'github_pat'
-                    ]],
-                    branches: [[name: '*/main']]
-                ])
+                checkout scm
             }
         }
 
@@ -33,12 +27,9 @@ pipeline {
             steps {
                 dir('backend_mejoras') {
                     sh '''
-                        apt-get update && apt-get install -y unzip git curl
+                        apt-get update && apt-get install -y unzip git curl sqlite3 libsqlite3-dev php8.2-sqlite3
                         curl -sS https://getcomposer.org/installer | php
                         mv composer.phar /usr/local/bin/composer
-
-                        export COMPOSER_HOME=$(pwd)/.composer
-                        mkdir -p $COMPOSER_HOME
 
                         composer install --no-interaction --prefer-dist --ansi
                         cp .env.example .env
@@ -53,15 +44,14 @@ pipeline {
                 dir('backend_mejoras') {
                     sh '''
                         mkdir -p build/logs
+                        chmod +x ./vendor/bin/phpunit
                         ./vendor/bin/phpunit --testdox --log-junit build/logs/phpunit.xml
                     '''
                 }
             }
             post {
                 always {
-                    dir('backend_mejoras') {
-                        junit 'build/logs/phpunit.xml'
-                    }
+                    junit 'backend_mejoras/build/logs/phpunit.xml'
                 }
             }
         }
@@ -74,7 +64,7 @@ pipeline {
                 }
             }
             environment {
-                SONAR_HOST_URL = 'http://sonarqube:9000'
+                SONAR_HOST_URL = 'http://sonar:9000'
                 SONAR_LOGIN    = credentials('sonarqube_token')
             }
             steps {
