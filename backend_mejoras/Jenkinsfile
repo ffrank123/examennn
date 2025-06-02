@@ -58,6 +58,8 @@ pipeline {
     steps {
         dir('backend_mejoras') {
             sh '''
+                cp .env.example .env
+                php artisan key:generate --ansi
                 mkdir -p build/logs
                 chmod +x ./vendor/bin/phpunit
                 ./vendor/bin/phpunit --testdox --log-junit build/logs/phpunit.xml
@@ -72,6 +74,7 @@ pipeline {
         }
     }
 }
+
 
 
 
