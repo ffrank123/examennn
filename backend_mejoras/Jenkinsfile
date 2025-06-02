@@ -87,21 +87,19 @@ pipeline {
         SONAR_TOKEN    = credentials('sonarqube')
     }
     steps {
-      stage('SonarQube Scan') {
-    steps {
-        withSonarQubeEnv('sonarqube') {
-            sh '''
-                sonar-scanner \
-                  -Dsonar.projectKey=examen_backend \
-                  -Dsonar.sources=app \
-                  -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
-                  -Dsonar.login=squ_2e4cb7258097f298e66bf138576b9779a667f850 \
-                  -Dsonar.host.url=http://sonarqube:9000
-            '''
+        dir('backend_mejoras') {
+            withSonarQubeEnv('sonarqube') {
+                sh """
+                    sonar-scanner \
+                      -Dsonar.projectKey=$SONAR_PROJECTKEY \
+                      -Dsonar.sources=app \
+                      -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
+                      -Dsonar.login=$SONAR_TOKEN \
+                      -Dsonar.host.url=$SONAR_HOST_URL
+                """
+            }
         }
     }
-}
-
 }
 
 
