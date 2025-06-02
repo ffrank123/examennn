@@ -31,31 +31,37 @@ pipeline {
                 }
             }
             steps {
-                sh '''
-                    apt-get update && apt-get install -y unzip git curl
-                    curl -sS https://getcomposer.org/installer | php
-                    mv composer.phar /usr/local/bin/composer
+                dir('backend_mejoras') {
+                    sh '''
+                        apt-get update && apt-get install -y unzip git curl
+                        curl -sS https://getcomposer.org/installer | php
+                        mv composer.phar /usr/local/bin/composer
 
-                    export COMPOSER_HOME=$(pwd)/.composer
-                    mkdir -p $COMPOSER_HOME
+                        export COMPOSER_HOME=$(pwd)/.composer
+                        mkdir -p $COMPOSER_HOME
 
-                    composer install --no-interaction --prefer-dist --ansi
-                    cp .env.example .env
-                    php artisan key:generate --ansi
-                '''
+                        composer install --no-interaction --prefer-dist --ansi
+                        cp .env.example .env
+                        php artisan key:generate --ansi
+                    '''
+                }
             }
         }
 
         stage('Test Suite') {
             steps {
-                sh '''
-                    mkdir -p build/logs
-                    ./vendor/bin/phpunit --testdox --log-junit build/logs/phpunit.xml
-                '''
+                dir('backend_mejoras') {
+                    sh '''
+                        mkdir -p build/logs
+                        ./vendor/bin/phpunit --testdox --log-junit build/logs/phpunit.xml
+                    '''
+                }
             }
             post {
                 always {
-                    junit 'build/logs/phpunit.xml'
+                    dir('backend_mejoras') {
+                        junit 'build/logs/phpunit.xml'
+                    }
                 }
             }
         }
@@ -72,13 +78,15 @@ pipeline {
                 SONAR_LOGIN    = credentials('sonarqube_token')
             }
             steps {
-                withSonarQubeEnv('sonarqube') {
-                    sh '''
-                        sonar-scanner \
-                        -Dsonar.projectKey=$SONAR_PROJECTKEY \
-                        -Dsonar.sources=app \
-                        -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml
-                    '''
+                dir('backend_mejoras') {
+                    withSonarQubeEnv('sonarqube') {
+                        sh '''
+                            sonar-scanner \
+                            -Dsonar.projectKey=$SONAR_PROJECTKEY \
+                            -Dsonar.sources=app \
+                            -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml
+                        '''
+                    }
                 }
             }
         }
