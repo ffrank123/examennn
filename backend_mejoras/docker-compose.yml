@@ -1,26 +1,61 @@
+version: '3.8'
+
 services:
   jenkins:
     build:
       context: .
-      dockerfile: Dockerfile-jenkins-php    # ← usa la imagen de arriba
+      dockerfile: Dockerfile-jenkins-php  # Usa tu Dockerfile personalizado
     container_name: jenkins
-    user: root                               # Jenkins seguirá corriendo como ‘jenkins’
+    user: root
     ports:
-      - "9080:8080"
+      - "9080:8080"     # Jenkins en localhost:9080
+      - "50000:50000"   # Puerto para agentes Jenkins
     volumes:
       - ./jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock  # Necesario para que Jenkins use Docker
     networks:
       - backend
 
-  sonar:
+  sonarqube:
     image: sonarqube:lts
-    container_name: sonar
+    container_name: sonarqube
     ports:
       - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+      - sonar.web.javaAdditionalOpts=-server
+    volumes:
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    networks:
+      - backend
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: turismo
+      MYSQL_USER: turismo_user
+      MYSQL_PASSWORD: turismo_pass
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
     networks:
       - backend
 
 networks:
   backend:
+    name: network_jenkins
     external: true
-    name: network_jenkins                    # ← la misma red que ya tienes
+
+volumes:
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+  mysql_data:
