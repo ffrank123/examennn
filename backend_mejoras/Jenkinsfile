@@ -88,16 +88,17 @@ pipeline {
             }
             steps {
                 dir('backend_mejoras') {
-                    withSonarQubeEnv('sonarqube') {
-                        sh """
-                            sonar-scanner \
-                              -Dsonar.projectKey=${SONAR_PROJECTKEY} \
-                              -Dsonar.sources=app \
-                              -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
-                              -Dsonar.login=${SONAR_TOKEN} \
-                              -Dsonar.host.url=${SONAR_HOST_URL}
-                        """
-                    }
+                    withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
+    sh '''
+        sonar-scanner \
+          -Dsonar.projectKey=examen_backend \
+          -Dsonar.sources=app \
+          -Dsonar.php.coverage.reportPaths=build/logs/phpunit.xml \
+          -Dsonar.login=$SONAR_TOKEN \
+          -Dsonar.host.url=http://sonar:9000
+    '''
+}
+
                 }
             }
         }
